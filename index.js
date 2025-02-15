@@ -16,7 +16,7 @@ const connection = mysql.createConnection({
     host: 'gateway01.us-west-2.prod.aws.tidbcloud.com',
     user: '3TCaLStuc9W9dcn.root',
     password:"fWR05PBXlRg4HrOE",
-    database: 'HCSS_app_db',
+    database: 'hcss_app_db',
     port:4000,
     ssl:{
       ca:fs.readFileSync(cer_part)
@@ -41,8 +41,16 @@ app.get('/', (req, res) => {
             {"api_name":"/getDoctors/","method":"get"},
             {"api_name":"/getDoctor/:id","method":"get"},
             {"api_name":"/addDoctor/","method":"post"},
-            {"api_name":"/editDoctor/","method":"put"},
+            {"api_name":"/editDoctors/","method":"put"},
             {"api_name":"/editDoctor/","method":"delete"},
+            {"api_name":"/getAppointments/","method":"get"},
+            {"api_name":"/getAppointments/:id","method":"get"},
+            {"api_name":"/addAppointments/","method":"post"},
+            {"api_name":"/getChatHistory/","method":"get"},
+            {"api_name":"/getChatHistory/:id","method":"get"},
+            {"api_name":"/addChatHistory/","method":"post"},
+            {"api_name":"/editChatHistory/","method":"put"},
+
         ]
     });
 });
@@ -74,7 +82,7 @@ app.get('/getAppointments/', (req, res) => {
 
 app.get('/getAppointments/:id', (req, res) => {
     let sql = 'SELECT * FROM Appointments';
-    connection.query(sql, function(err, results, fields) {
+    connection.query(sql,[id], function(err, results, fields) {
           res.json(results);
         }
       );
@@ -90,35 +98,45 @@ app.get('/getChatHistory/', (req, res) => {
 
 app.get('/getChatHistory/:id', (req, res) => {
     let sql = 'SELECT * FROM Chat_History';
-    connection.query(sql, function(err, results, fields) {
+    connection.query(sql,[id], function(err, results, fields) {
           res.json(results);
         }
       );
 });
 
-app.post('/addDoctor',urlencodedParser, (req, res) => {
+app.post('/addDoctor', (req, res) => {
   console.log(req.body);
-    let sql = 'INSERT INTO doctor(doctor_id, name, expertise) VALUES (?,?,?)';
-    let values = [req.body.doctor_id,req.body.name,req.body.expertise];
-    let message = "Cannot Insert";
-    connection.query(sql,values, function(err, results, fields) {
-      if(results) { message = "Inserted";}
-          res.json({error:false,data:results,msg:message});
-        }
-      );
+  let sql = 'INSERT INTO Doctors(doctor_id, name, expertise) VALUES (?,?,?)';
+  let values = [req.body.doctor_id, req.body.name, req.body.expertise];
+
+  connection.query(sql, values, function(err, results) {
+      if (err) {
+          console.error("Database Error:", err);
+          return res.json({ error: true, msg: "Database Error", details: err });
+      }
+      res.json({ error: false, data: results, msg: "Inserted" });
+  });
 });
 
-app.put('/editDoctor', urlencodedParser, (req, res) => {
+
+app.put('/editDoctors', urlencodedParser, (req, res) => {
   console.log(req.body);
-  let sql = 'UPDATE doctor SET doctor_id =?, name =?, expertise=? WHERE doctor_id=? ';
-  let values = [req.body.doctor_name,req.body.doctor_phone,req.body.status, req.body.doctor_id];
+  let sql = 'UPDATE Doctors SET name =?, expertise=? WHERE doctor_id=? ';
+  let values = [req.body.name, req.body.expertise, req.body.doctor_id];
   let message = "Cannot Edit";
 
-  connection.query(sql,values, function(err, results, fields) {
-        if(results) { message = "Updated";}
-        res.json({error:false,data:results,msg:message});
-      }
-    );
+  connection.query(sql, values, function(err, results, fields) {
+    if (err) {
+      console.error(err);
+      return res.json({ error: true, msg: "Database Error", details: err });
+    }
+
+    if (results.affectedRows > 0) { 
+      message = "Updated"; 
+    }
+    
+    res.json({ error: false, data: results, msg: message });
+  });
 });
 
 app.delete('/editDoctor', urlencodedParser, (req, res) => {
@@ -127,7 +145,7 @@ console.log(req.body);
   if(req.body.doctor_status==1){
     st = 1;
   }
-  let sql = 'UPDATE doctor set name=? WHERE doctor_id=? ';
+  let sql = 'UPDATE Doctors set name=? WHERE doctor_id=? ';
   let values = [st,req.body.doctor_id];
   console.log(values)
   let message = "Cannot Delete";
@@ -138,4 +156,50 @@ console.log(req.body);
     );
 });
 
+app.post('/addAppointments', (req, res) => {
+  console.log(req.body);
+  let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id,appointment_date) VALUES (?,?,?,?)';
+  let values = [req.body.Appointments_id, req.body.user_id, req.body.doctor_id,req.body.appointments_date];
 
+  connection.query(sql, values, function(err, results) {
+      if (err) {
+          console.error("Database Error:", err);
+          return res.json({ error: true, msg: "Database Error", details: err });
+      }
+      res.json({ error: false, data: results, msg: "Inserted" });
+  });
+});
+
+app.post('/addChatHistory', (req, res) => {
+  console.log(req.body);
+  let sql = 'INSERT INTO Chat_History(chat_id, user_id, doctors_id,message) VALUES (?,?,?,?)';
+  let values = [req.body.chat_id, req.body.user_id, req.body.doctor_id,req.body.message];
+
+  connection.query(sql, values, function(err, results) {
+      if (err) {
+          console.error("Database Error:", err);
+          return res.json({ error: true, msg: "Database Error", details: err });
+      }
+      res.json({ error: false, data: results, msg: "Inserted" });
+  });
+});
+
+app.put('/editChatHistory', urlencodedParser, (req, res) => {
+  console.log(req.body);
+  let sql = 'UPDATE Chat_History SET chat_id =?, user_id=? , doctors_id=? WHERE message=?  ';
+  let values = [req.body.chat_id, req.body.user_id, req.body.doctors_id,req.body.message];
+  let message = "Cannot Edit";
+
+  connection.query(sql, values, function(err, results, fields) {
+    if (err) {
+      console.error(err);
+      return res.json({ error: true, msg: "Database Error", details: err });
+    }
+
+    if (results.affectedRows > 0) { 
+      message = "Updated"; 
+    }
+    
+    res.json({ error: false, data: results, msg: message });
+  });
+});
