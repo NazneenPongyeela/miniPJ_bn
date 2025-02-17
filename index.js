@@ -90,12 +90,17 @@ app.get('/getAppointments/:id', (req, res) => {
 });
 
 app.get('/getChatHistory/', (req, res) => {
-    let sql = 'SELECT * FROM Chat_History';
+    let sql = 'SELECT chat_id, user_id, message, timestamp FROM Chat_History';
     connection.query(sql, function(err, results, fields) {
-          res.json(results);
+        if (err) {
+            console.error("Database Error:", err);
+            res.status(500).json({ error: true, msg: "Database Error", details: err });
+        } else {
+            res.json(results);
         }
-      );
+    });
 });
+
 
 app.get('/getChatHistory/:id', (req, res) => {
     let sql = 'SELECT * FROM Chat_History';
