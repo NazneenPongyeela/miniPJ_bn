@@ -45,10 +45,11 @@ app.get('/', (req, res) => {
             {"api_name":"/getAppointments/","method":"get"},
             {"api_name":"/getAppointments/:id","method":"get"},
             {"api_name":"/addAppointments/","method":"post"},
+            {"api_name":"/editAppointments/","method":"put"},
+            {"api_name":"/deleteAppointments/","method":"delete"},
             {"api_name":"/getChatHistory/","method":"get"},
             {"api_name":"/getChatHistory/:id","method":"get"},
             {"api_name":"/addChatHistory/","method":"post"},
-            {"api_name":"/editChatHistory/","method":"put"},
             {"api_name":"/deleteChatHistory/","method":"delete"},
 
 
@@ -90,28 +91,19 @@ app.get('/getAppointments/:id', (req, res) => {
 });
 
 app.get('/getChatHistory/', (req, res) => {
-    let sql = 'SELECT chat_id, user_id, message, timestamp FROM Chat_History';
+    let sql = 'SELECT * FROM Chat_History';
     connection.query(sql, function(err, results, fields) {
-        if (err) {
-            console.error("Database Error:", err);
-            res.status(500).json({ error: true, msg: "Database Error", details: err });
-        } else {
-            res.json(results);
+          res.json(results);
         }
-    });
+      );
 });
 
-
 app.get('/getChatHistory/:id', (req, res) => {
-    const chatId = req.params.id;
-    let sql = 'SELECT * FROM Chat_History WHERE chat_id = ? ORDER BY timestamp DESC';
-    connection.query(sql, [chatId], function(err, results) {
-        if (err) {
-            console.error("Database Error:", err);
-            return res.status(500).json({ error: true, msg: "Database Error", details: err });
+    let sql = 'SELECT * FROM Chat_History';
+    connection.query(sql,[id], function(err, results, fields) {
+          res.json(results);
         }
-        res.json(results);
-    });
+      );
 });
 
 app.post('/addDoctor', (req, res) => {
@@ -151,63 +143,96 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 
 app.post('/addAppointments', (req, res) => {
-  console.log(req.body);
-  let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id,appointment_date) VALUES (?,?,?)';
-  let values = [req.body.Appointments_id, req.body.user_id, req.body.doctor_id,req.body.appointments_date];
-
-  connection.query(sql, values, function(err, results) {
-      if (err) {
-          console.error("Database Error:", err);
-          return res.json({ error: true, msg: "Database Error", details: err });
-      }
-      res.json({ error: false, data: results, msg: "Inserted" });
-  });
-});
-
-app.post('/addChatHistory', (req, res) => {
-  console.log(req.body);
-  let sql = 'INSERT INTO Chat_History( user_id, message) VALUES (?,?)';
-  let values = [req.body.user_id, req.body.message];
-
-  connection.query(sql, values, function(err, results) {
-      if (err) {
-          console.error("Database Error:", err);
-          return res.json({ error: true, msg: "Database Error", details: err });
-      }
-      res.json({ 
-          error: false, 
-          data: {
-              user_id: req.body.user_id,
-              message: req.body.message
-          }, 
-          msg: "Chat created successfully" 
-      });
-  });
-});
-
-app.put('/editChatHistory', urlencodedParser, (req, res) => {
   console.log("Request Body:", req.body);
 
-  if (!req.body.chat_id || !req.body.message) {
-    return res.json({ error: true, msg: "Missing chat_id or message" });
+  let { appointment_id, user_id, doctor_id, appointment_date } = req.body;
+
+  if (!appointment_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return res.json({ error: true, msg: "Invalid date format. Use YYYY-MM-DD" });
   }
 
-    let sql = 'UPDATE Chat_History SET chat_id=?, user_id=?, doctor_id=?, message=? WHERE chat_id=?';
-     let values = [req.body.chat_id, req.body.user_id, req.body.doctor_id, req.body.message, req.body.chat_id];
+  let sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
+  let values = [appointment_id, user_id, doctor_id, appointment_date];
 
+  connection.query(sql, values, function (err, results) {
+    if (err) {
+      console.error("Database Error:", err);
+      return res.json({ error: true, msg: "Database Error", details: err });
+    }
+    res.json({ error: false, data: results, msg: "Inserted Successfully" });
+  });
+});
+
+app.put('/editAppointments', urlencodedParser, (req, res) => {
+  console.log("Request Body:", req.body);
+
+  let { appointment_id, user_id, doctor_id, appointment_date } = req.body;
+
+  let sql = 'UPDATE Appointments SET user_id=?, doctor_id=?, appointment_date=? WHERE appointment_id=?';
+  let values = [user_id, doctor_id, appointment_date, appointment_id]; 
+  connection.query(sql, values, function (err, results) {
+    if (err) {
+      console.error("Database Error:", err);
+      return res.json({ error: true, msg: "Database Error", details: err });
+    }
+
+    let message = results.affectedRows > 0 ? "Updated Successfully" : "No Record Updated";
+    res.json({ error: false, data: results, msg: message });
+  });
+});
+
+app.delete('/deleteAppointments', urlencodedParser, (req, res) => {
+  console.log("Request Body:", req.body);
+  
+  let sql = 'DELETE FROM Appointments WHERE appointment_id = ?';
+  let values = [req.body.appointment_id];
+  console.log("SQL Values:", values);
+
+  let message = "Cannot Delete";
   connection.query(sql, values, function(err, results) {
     if (err) {
       console.error("Database Error:", err);
       return res.json({ error: true, msg: "Database Error", details: err });
     }
 
-    console.log("Query Results:", results);
-
     if (results.affectedRows > 0) { 
-      return res.json({ error: false, data: results, msg: "Updated" });
-    } else {
-      return res.json({ error: true, msg: `No rows updated. Check chat_id: ${req.body.chat_id}` });
+      message = "Deleted Successfully"; 
     }
+    
+    res.json({ error: false, data: results, msg: message });
+  });
+});
+
+
+app.post('/addChatHistory', (req, res) => {
+  console.log(req.body);
+
+  if (!req.body.user_id) {
+    return res.json({ error: true, msg: "user_id cannot be null" });
+  }
+
+  let checkDoctorSQL = 'SELECT * FROM Doctors WHERE doctor_id = ?';
+  connection.query(checkDoctorSQL, [req.body.doctor_id], function(err, doctorResults) {
+    if (err) {
+      console.error("Database Error:", err);
+      return res.json({ error: true, msg: "Database Error", details: err });
+    }
+
+    if (doctorResults.length === 0) {
+      return res.json({ error: true, msg: "Doctor ID not found in Doctors table" });
+    }
+
+    // ถ้า `doctor_id` มีอยู่แล้ว ให้ทำการเพิ่ม Chat_History
+    let sql = 'INSERT INTO Chat_History (user_id, doctor_id, message) VALUES (?, ?, ?)';
+    let values = [req.body.user_id, req.body.doctor_id, req.body.message];
+
+    connection.query(sql, values, function(err, results) {
+      if (err) {
+        console.error("Database Error:", err);
+        return res.json({ error: true, msg: "Database Error", details: err });
+      }
+      res.json({ error: false, data: results, msg: "Inserted" });
+    });
   });
 });
 
