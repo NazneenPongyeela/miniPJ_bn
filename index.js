@@ -42,7 +42,6 @@ app.get('/', (req, res) => {
             {"api_name":"/getDoctor/:id","method":"get"},
             {"api_name":"/addDoctor/","method":"post"},
             {"api_name":"/editDoctors/","method":"put"},
-            {"api_name":"/editDoctor/","method":"delete"},
             {"api_name":"/getAppointments/","method":"get"},
             {"api_name":"/getAppointments/:id","method":"get"},
             {"api_name":"/addAppointments/","method":"post"},
@@ -50,6 +49,8 @@ app.get('/', (req, res) => {
             {"api_name":"/getChatHistory/:id","method":"get"},
             {"api_name":"/addChatHistory/","method":"post"},
             {"api_name":"/editChatHistory/","method":"put"},
+            {"api_name":"/deleteChatHistory/","method":"delete"},
+
 
         ]
     });
@@ -139,22 +140,6 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
   });
 });
 
-app.delete('/editDoctor', urlencodedParser, (req, res) => {
-console.log(req.body);
-  let st = 0;
-  if(req.body.doctor_status==1){
-    st = 1;
-  }
-  let sql = 'UPDATE Doctors set name=? WHERE doctor_id=? ';
-  let values = [st,req.body.doctor_id];
-  console.log(values)
-  let message = "Cannot Delete";
-  connection.query(sql,values, function(err, results, fields) {
-          if(results) { message = "Updated";}
-          res.json({error:false,data:results,msg:message});
-      }
-    );
-});
 
 app.post('/addAppointments', (req, res) => {
   console.log(req.body);
@@ -172,7 +157,7 @@ app.post('/addAppointments', (req, res) => {
 
 app.post('/addChatHistory', (req, res) => {
   console.log(req.body);
-  let sql = 'INSERT INTO Chat_History(chat_id, user_id, doctors_id,message) VALUES (?,?,?,?)';
+  let sql = 'INSERT INTO Chat_History(chat_id, user_id, doctor_id,message) VALUES (?,?,?,?)';
   let values = [req.body.chat_id, req.body.user_id, req.body.doctor_id,req.body.message];
 
   connection.query(sql, values, function(err, results) {
@@ -184,22 +169,53 @@ app.post('/addChatHistory', (req, res) => {
   });
 });
 
-app.put('/editChatHistory', urlencodedParser, (req, res) => {
-  console.log(req.body);
-  let sql = 'UPDATE Chat_History SET chat_id =?, user_id=? , doctors_id=? WHERE message=?  ';
-  let values = [req.body.chat_id, req.body.user_id, req.body.doctors_id,req.body.message];
-  let message = "Cannot Edit";
 
-  connection.query(sql, values, function(err, results, fields) {
+app.put('/editChatHistory', urlencodedParser, (req, res) => {
+  console.log("Request Body:", req.body);
+
+  if (!req.body.chat_id || !req.body.message) {
+    return res.json({ error: true, msg: "Missing chat_id or message" });
+  }
+
+    let sql = 'UPDATE Chat_History SET chat_id=?, user_id=?, doctor_id=?, message=? WHERE chat_id=?';
+     let values = [req.body.chat_id, req.body.user_id, req.body.doctor_id, req.body.message, req.body.chat_id];
+
+  connection.query(sql, values, function(err, results) {
     if (err) {
-      console.error(err);
+      console.error("Database Error:", err);
+      return res.json({ error: true, msg: "Database Error", details: err });
+    }
+
+    console.log("Query Results:", results);
+
+    if (results.affectedRows > 0) { 
+      return res.json({ error: false, data: results, msg: "Updated" });
+    } else {
+      return res.json({ error: true, msg: `No rows updated. Check chat_id: ${req.body.chat_id}` });
+    }
+  });
+});
+
+
+app.delete('/deleteChatHistory', urlencodedParser, (req, res) => {
+  console.log(req.body);
+  
+  let sql = 'DELETE FROM Chat_History WHERE chat_id = ?';
+  let values = [req.body.chat_id];
+  console.log(values);
+
+  let message = "Cannot Delete";
+  connection.query(sql, values, function(err, results) {
+    if (err) {
+      console.error("Database Error:", err);
       return res.json({ error: true, msg: "Database Error", details: err });
     }
 
     if (results.affectedRows > 0) { 
-      message = "Updated"; 
+      message = "Deleted Successfully"; 
     }
-    
     res.json({ error: false, data: results, msg: message });
   });
 });
+
+  
