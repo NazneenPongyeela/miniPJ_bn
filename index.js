@@ -103,11 +103,15 @@ app.get('/getChatHistory/', (req, res) => {
 
 
 app.get('/getChatHistory/:id', (req, res) => {
-    let sql = 'SELECT * FROM Chat_History';
-    connection.query(sql,[id], function(err, results, fields) {
-          res.json(results);
+    const chatId = req.params.id;
+    let sql = 'SELECT * FROM Chat_History WHERE chat_id = ? ORDER BY timestamp DESC';
+    connection.query(sql, [chatId], function(err, results) {
+        if (err) {
+            console.error("Database Error:", err);
+            return res.status(500).json({ error: true, msg: "Database Error", details: err });
         }
-      );
+        res.json(results);
+    });
 });
 
 app.post('/addDoctor', (req, res) => {
