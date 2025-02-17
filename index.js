@@ -162,8 +162,8 @@ app.post('/addAppointments', (req, res) => {
 
 app.post('/addChatHistory', (req, res) => {
   console.log(req.body);
-  let sql = 'INSERT INTO Chat_History(chat_id, user_id, doctor_id,message) VALUES (?,?,?,?)';
-  let values = [req.body.chat_id, req.body.user_id, req.body.doctor_id,req.body.message];
+  let sql = 'INSERT INTO Chat_History(chat_id, user_id, message) VALUES (?,?,?,?)';
+  let values = [req.body.chat_id, req.body.user_id, req.body.message];
 
   connection.query(sql, values, function(err, results) {
       if (err) {
