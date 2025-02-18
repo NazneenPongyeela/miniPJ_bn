@@ -264,51 +264,57 @@ app.delete('/deleteAppointments', urlencodedParser, (req, res) => {
   });
 });
 
-app.post('/addChatHistory', (req, res) => {
-  console.log(req.body);
-
-  if (!req.body.user_id) {
-    return res.json({ error: true, msg: "user_id cannot be null" });
-  }
-
-  // ตรวจสอบว่า doctor_id มีอยู่ในตาราง Doctors หรือไม่ (หากระบบของคุณต้องการ)
-  let checkDoctorSQL = 'SELECT * FROM Doctors WHERE doctor_id = ?';
-  connection.query(checkDoctorSQL, [req.body.doctor_id], function(err, doctorResults) {
-    if (err) {
-      console.error("Database Error:", err);
-      return res.json({ error: true, msg: "Database Error", details: err });
-    }
-
-    if (doctorResults.length === 0) {
-      return res.json({ error: true, msg: "Doctor ID not found in Doctors table" });
-    }
-
-    // Query ค่า chat_id ล่าสุด เพื่อสร้าง chat_id แบบลำดับ (เริ่มจาก CH000)
-    connection.query("SELECT chat_id FROM Chat_History ORDER BY chat_id DESC LIMIT 3", (err, results) => {
-      if (err) {
-        console.error("Database Error:", err);
-        return res.json({ error: true, msg: "Database Error", details: err.message });
-      }
-      let nextId = "CH000";
-      if (results.length > 0) {
-        // สมมติว่า chat_id มีรูปแบบ "CH" ตามด้วยตัวเลข
-        let lastNumber = parseInt(results[0].chat_id.substring(2));
-        nextId = "CH" + String(lastNumber + 1).padStart(3, '0');
-      }
-      
-      // ใช้ nextId ที่ได้มาในการ INSERT ลงใน Chat_History
-      let sql = "INSERT INTO Chat_History (chat_id, user_id, doctor_id, message) VALUES (?, ?, ?, ?)";
-      let values = [nextId, req.body.user_id, req.body.doctor_id, req.body.message];
-
-      connection.query(sql, values, function(err, results) {
+app.get('/getNextChatId', (req, res) => {
+    const sql = 'SELECT MAX(chat_id) as maxId FROM Chat_History';
+    connection.query(sql, function(err, results) {
         if (err) {
-          console.error("Database Error:", err);
-          return res.json({ error: true, msg: "Database Error", details: err.message });
+            console.error("Database Error:", err);
+            return res.json({ error: true, msg: "Database Error", details: err.message });
         }
-        res.json({ error: false, data: results, msg: "Inserted" });
-      });
+        
+        let nextId = 'CH000';
+        if (results[0].maxId) {
+            const currentNum = parseInt(results[0].maxId.substring(2));
+            nextId = `CH${String(currentNum + 1).padStart(3, '0')}`;
+        }
+        
+        res.json({ nextId });
     });
-  });
+});
+
+app.post('/addChatHistory', (req, res) => {
+    console.log(req.body);
+
+    if (!req.body.user_id) {
+        return res.json({ error: true, msg: "user_id cannot be null" });
+    }
+
+    // First get the next chat ID
+    const getNextIdSql = 'SELECT MAX(chat_id) as maxId FROM Chat_History';
+    connection.query(getNextIdSql, function(err, results) {
+        if (err) {
+            console.error("Database Error:", err);
+            return res.json({ error: true, msg: "Database Error", details: err });
+        }
+
+        let nextId = 'CH000';
+        if (results[0].maxId) {
+            const currentNum = parseInt(results[0].maxId.substring(2));
+            nextId = `CH${String(currentNum + 1).padStart(3, '0')}`;
+        }
+
+        // Then insert the new chat with the generated ID
+        let sql = 'INSERT INTO Chat_History (chat_id, user_id, doctor_id, message) VALUES (?, ?, ?, ?)';
+        let values = [nextId, req.body.user_id, req.body.doctor_id || null, req.body.message];
+
+        connection.query(sql, values, function(err, results) {
+            if (err) {
+                console.error("Database Error:", err);
+                return res.json({ error: true, msg: "Database Error", details: err });
+            }
+            res.json({ error: false, data: { ...results, chat_id: nextId }, msg: "Inserted" });
+        });
+    });
 });
 
 
