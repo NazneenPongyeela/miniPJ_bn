@@ -284,7 +284,7 @@ app.post('/addChatHistory', (req, res) => {
     }
 
     // Query ค่า chat_id ล่าสุด เพื่อสร้าง chat_id แบบลำดับ (เริ่มจาก CH000)
-    connection.query("SELECT chat_id FROM Chat_History ORDER BY chat_id DESC LIMIT 1", (err, results) => {
+    connection.query("SELECT chat_id FROM Chat_History ORDER BY chat_id DESC LIMIT 3", (err, results) => {
       if (err) {
         console.error("Database Error:", err);
         return res.json({ error: true, msg: "Database Error", details: err.message });
