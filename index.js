@@ -58,11 +58,23 @@ app.get('/', (req, res) => {
 });
 
 app.get('/getDoctors/', (req, res) => {
-    let sql = 'SELECT * FROM Doctors';
-    connection.query(sql, function(err, results, fields) {
-          res.json(results);
+    console.log('Fetching doctors list...'); // เพิ่ม log เพื่อตรวจสอบการเรียก API
+    
+    const sql = 'SELECT doctor_id, name, expertise, availability FROM Doctors';
+    
+    connection.query(sql, function(err, results) {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({
+                error: true,
+                message: 'Error fetching doctors',
+                details: err.message
+            });
         }
-      );
+        
+        console.log('Found doctors:', results); // เพิ่ม log เพื่อตรวจสอบผลลัพธ์
+        res.json(results);
+    });
 });
 
 app.get('/getdoctor/:id', (req, res) => {
