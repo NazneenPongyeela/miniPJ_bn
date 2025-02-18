@@ -82,18 +82,14 @@ app.get('/getAppointments/', (req, res) => {
       );
 });
 
-// Get single appointment endpoint
 app.get('/getAppointments/:id', (req, res) => {
     const id = req.params.id;
     const sql = 'SELECT * FROM Appointments WHERE appointment_id = ?';
     
     connection.query(sql, [id], function(err, results) {
         if (err) {
-            return res.json({ 
-                error: true, 
-                msg: "Database Error", 
-                details: err.message 
-            });
+            console.error("Database Error:", err);
+            return res.json({ error: true, msg: "Database Error", details: err.message });
         }
         res.json(results);
     });
@@ -151,8 +147,9 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 });
 
 
+// Add appointment endpoint
 app.post('/addAppointments', (req, res) => {
-    console.log("Request Body:", req.body);
+    console.log("Adding appointment:", req.body);
 
     const { appointment_id, user_id, doctor_id, appointment_date } = req.body;
 
@@ -160,40 +157,38 @@ app.post('/addAppointments', (req, res) => {
     if (!appointment_id || !user_id || !doctor_id || !appointment_date) {
         return res.json({ 
             error: true, 
-            msg: "Missing required fields" 
+            msg: "All fields are required: appointment_id, user_id, doctor_id, appointment_date" 
         });
     }
-
-    // Validate date format
-    if (!appointment_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return res.json({ 
-            error: true, 
-            msg: "Invalid date format. Use YYYY-MM-DD" 
-        });
-    }
-    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
-    const values = [appointment_id, user_id, doctor_id, appointment_date];
-
-    connection.query(sql, values, function(err, results) {
+    
+    const checkDoctorSQL = 'SELECT doctor_id FROM Doctors WHERE doctor_id = ?';
+    connection.query(checkDoctorSQL, [doctor_id], function(err, doctorResults) {
         if (err) {
             console.error("Database Error:", err);
-            return res.json({ 
-                error: true, 
-                msg: "Database Error", 
-                details: err.message 
-            });
+            return res.json({ error: true, msg: "Database Error", details: err.message });
         }
-        res.json({ 
-            error: false, 
-            data: results, 
-            msg: "Appointment added successfully" 
+
+        if (doctorResults.length === 0) {
+            return res.json({ error: true, msg: "Doctor ID does not exist" });
+        }
+
+        // If doctor exists, proceed with appointment creation
+        const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
+        const values = [appointment_id, user_id, doctor_id, appointment_date];
+
+        connection.query(sql, values, function(err, results) {
+            if (err) {
+                console.error("Database Error:", err);
+                return res.json({ error: true, msg: "Database Error", details: err.message });
+            }
+            res.json({ error: false, data: results, msg: "Appointment added successfully" });
         });
     });
 });
 
 // Edit appointment endpoint
 app.put('/editAppointments', (req, res) => {
-    console.log("Request Body:", req.body);
+    console.log("Updating appointment:", req.body);
 
     const { appointment_id, user_id, doctor_id, appointment_date } = req.body;
 
@@ -201,34 +196,36 @@ app.put('/editAppointments', (req, res) => {
     if (!appointment_id || !user_id || !doctor_id || !appointment_date) {
         return res.json({ 
             error: true, 
-            msg: "Missing required fields" 
+            msg: "All fields are required: appointment_id, user_id, doctor_id, appointment_date" 
         });
     }
 
-    const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ?, appointment_date = ? WHERE appointment_id = ?';
-    const values = [user_id, doctor_id, appointment_date, appointment_id];
-
-    connection.query(sql, values, function(err, results) {
+    const checkDoctorSQL = 'SELECT doctor_id FROM Doctors WHERE doctor_id = ?';
+    connection.query(checkDoctorSQL, [doctor_id], function(err, doctorResults) {
         if (err) {
             console.error("Database Error:", err);
-            return res.json({ 
-                error: true, 
-                msg: "Database Error", 
-                details: err.message 
-            });
+            return res.json({ error: true, msg: "Database Error", details: err.message });
         }
 
-        if (results.affectedRows === 0) {
-            return res.json({ 
-                error: true, 
-                msg: "Appointment not found" 
-            });
+        if (doctorResults.length === 0) {
+            return res.json({ error: true, msg: "Doctor ID does not exist" });
         }
 
-        res.json({ 
-            error: false, 
-            data: results, 
-            msg: "Appointment updated successfully" 
+        // If doctor exists, proceed with appointment update
+        const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ?, appointment_date = ? WHERE appointment_id = ?';
+        const values = [user_id, doctor_id, appointment_date, appointment_id];
+
+        connection.query(sql, values, function(err, results) {
+            if (err) {
+                console.error("Database Error:", err);
+                return res.json({ error: true, msg: "Database Error", details: err.message });
+            }
+
+            if (results.affectedRows === 0) {
+                return res.json({ error: true, msg: "Appointment not found" });
+            }
+
+            res.json({ error: false, data: results, msg: "Appointment updated successfully" });
         });
     });
 });
