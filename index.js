@@ -264,57 +264,37 @@ app.delete('/deleteAppointments', urlencodedParser, (req, res) => {
   });
 });
 
-app.get('/getNextChatId', (req, res) => {
-    const sql = 'SELECT MAX(chat_id) as maxId FROM Chat_History';
-    connection.query(sql, function(err, results) {
-        if (err) {
-            console.error("Database Error:", err);
-            return res.json({ error: true, msg: "Database Error", details: err.message });
-        }
-        
-        let nextId = 'CH000';
-        if (results[0].maxId) {
-            const currentNum = parseInt(results[0].maxId.substring(2));
-            nextId = `CH${String(currentNum + 1).padStart(3, '0')}`;
-        }
-        
-        res.json({ nextId });
-    });
-});
 
 app.post('/addChatHistory', (req, res) => {
-    console.log(req.body);
+  console.log(req.body);
 
-    if (!req.body.user_id) {
-        return res.json({ error: true, msg: "user_id cannot be null" });
+  if (!req.body.user_id) {
+    return res.json({ error: true, msg: "user_id cannot be null" });
+  }
+
+  let checkDoctorSQL = 'SELECT * FROM Doctors WHERE doctor_id = ?';
+  connection.query(checkDoctorSQL, [req.body.doctor_id], function(err, doctorResults) {
+    if (err) {
+      console.error("Database Error:", err);
+      return res.json({ error: true, msg: "Database Error", details: err });
     }
 
-    // First get the next chat ID
-    const getNextIdSql = 'SELECT MAX(chat_id) as maxId FROM Chat_History';
-    connection.query(getNextIdSql, function(err, results) {
-        if (err) {
-            console.error("Database Error:", err);
-            return res.json({ error: true, msg: "Database Error", details: err });
-        }
+    if (doctorResults.length === 0) {
+      return res.json({ error: true, msg: "Doctor ID not found in Doctors table" });
+    }
 
-        let nextId = 'CH000';
-        if (results[0].maxId) {
-            const currentNum = parseInt(results[0].maxId.substring(2));
-            nextId = `CH${String(currentNum + 1).padStart(3, '0')}`;
-        }
+    // ถ้า `doctor_id` มีอยู่แล้ว ให้ทำการเพิ่ม Chat_History
+    let sql = 'INSERT INTO Chat_History (user_id, doctor_id, message) VALUES (?, ?, ?)';
+    let values = [req.body.user_id, req.body.doctor_id, req.body.message];
 
-        // Then insert the new chat with the generated ID
-        let sql = 'INSERT INTO Chat_History (chat_id, user_id, doctor_id, message) VALUES (?, ?, ?, ?)';
-        let values = [nextId, req.body.user_id, req.body.doctor_id || null, req.body.message];
-
-        connection.query(sql, values, function(err, results) {
-            if (err) {
-                console.error("Database Error:", err);
-                return res.json({ error: true, msg: "Database Error", details: err });
-            }
-            res.json({ error: false, data: { ...results, chat_id: nextId }, msg: "Inserted" });
-        });
+    connection.query(sql, values, function(err, results) {
+      if (err) {
+        console.error("Database Error:", err);
+        return res.json({ error: true, msg: "Database Error", details: err });
+      }
+      res.json({ error: false, data: results, msg: "Inserted" });
     });
+  });
 });
 
 
