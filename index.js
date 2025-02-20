@@ -163,18 +163,22 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 });
 
 
-app.post('/addAppointments',urlencodedParser, (req, res) => {
-  console.log(req.body);
-    let sql = 'INSERT INTO Appointments(appointment_id,user_id, doctor_id) VALUES (?,?,?)';
-    let values = [req.body.appointment_id, req.body.doctor_user_id,req.body.doctor_id];
-    let message = "Cannot Insert";
-    connection.query(sql,values, function(err, results, fields) {
-      if(results) { message = "Inserted";}
-          res.json({error:false,data:results,msg:message});
+app.post('/addAppointments', urlencodedParser, (req, res) => {
+    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id) VALUES (?,?,?)';
+    let values = [
+        req.body.appointment_id,
+        req.body.user_id, 
+        req.body.doctor_id
+    ];
+    
+    connection.query(sql, values, (err, results) => {
+        if (err) {
+            console.error("Database Error:", err);
+            return res.json({ error: true, msg: "Database Error", details: err });
         }
-      );
+        res.json({ error: false, data: results, msg: "Appointment added successfully" });
+    });
 });
-
 
 app.put('/editAppointments', urlencodedParser, (req, res) => {
   console.log(req.body);
