@@ -165,8 +165,8 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 app.post('/addAppointments',urlencodedParser, (req, res) => {
   console.log(req.body);
-    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id) VALUES (?,?,?)';
-    let values = [req.body.appointment_id,req.body.doctor_user_id,req.body.doctor_id];
+    let sql = 'INSERT INTO Appointments( user_id, doctor_id) VALUES (?,?)';
+    let values = [req.body.doctor_user_id,req.body.doctor_id];
     let message = "Cannot Insert";
     connection.query(sql,values, function(err, results, fields) {
       if(results) { message = "Inserted";}
