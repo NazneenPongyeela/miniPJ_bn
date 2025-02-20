@@ -87,11 +87,18 @@ app.get('/getdoctor/:id', (req, res) => {
 });
 
 app.get('/getAppointments/', (req, res) => {
-    let sql = 'SELECT * FROM Appointments';
-    connection.query(sql, function(err, results, fields) {
-          res.json(results);
+    const sql = 'SELECT * FROM Appointments';
+    connection.query(sql, (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({
+                error: true,
+                message: 'Error fetching appointments',
+                details: err.message
+            });
         }
-      );
+        res.json(results);
+    });
 });
 
 app.get('/getAppointments/:id', (req, res) => {
@@ -159,41 +166,32 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 });
 
 
-// Add appointment endpoint
 app.post('/addAppointments', (req, res) => {
-    console.log("Adding appointment:", req.body);
-
     const { appointment_id, user_id, doctor_id, appointment_date } = req.body;
 
-    // Validate required fields
     if (!appointment_id || !user_id || !doctor_id || !appointment_date) {
-        return res.json({ 
-            error: true, 
-            msg: "All fields are required: appointment_id, user_id, doctor_id, appointment_date" 
+        return res.json({
+            error: true,
+            msg: "All fields are required"
         });
     }
-    
-    const checkDoctorSQL = 'SELECT doctor_id FROM Doctors WHERE doctor_id = ?';
-    connection.query(checkDoctorSQL, [doctor_id], function(err, doctorResults) {
+
+    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
+    const values = [appointment_id, user_id, doctor_id, appointment_date];
+
+    connection.query(sql, values, (err, results) => {
         if (err) {
-            console.error("Database Error:", err);
-            return res.json({ error: true, msg: "Database Error", details: err.message });
+            console.error('Database error:', err);
+            return res.json({
+                error: true,
+                msg: "Database Error",
+                details: err.message
+            });
         }
-
-        if (doctorResults.length === 0) {
-            return res.json({ error: true, msg: "Doctor ID does not exist" });
-        }
-
-        // If doctor exists, proceed with appointment creation
-        const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
-        const values = [appointment_id, user_id, doctor_id, appointment_date];
-
-        connection.query(sql, values, function(err, results) {
-            if (err) {
-                console.error("Database Error:", err);
-                return res.json({ error: true, msg: "Database Error", details: err.message });
-            }
-            res.json({ error: false, data: results, msg: "Appointment added successfully" });
+        res.json({
+            error: false,
+            msg: "Appointment added successfully",
+            data: results
         });
     });
 });
@@ -242,26 +240,41 @@ app.put('/editAppointments', (req, res) => {
     });
 });
 
-app.delete('/deleteAppointments', urlencodedParser, (req, res) => {
-  console.log("Request Body:", req.body);
-  
-  let sql = 'DELETE FROM Appointments WHERE appointment_id = ?';
-  let values = [req.body.appointment_id];
-  console.log("SQL Values:", values);
-
-  let message = "Cannot Delete";
-  connection.query(sql, values, function(err, results) {
-    if (err) {
-      console.error("Database Error:", err);
-      return res.json({ error: true, msg: "Database Error", details: err });
-    }
-
-    if (results.affectedRows > 0) { 
-      message = "Deleted Successfully"; 
-    }
+app.delete('/deleteAppointments', (req, res) => {
+    const { appointment_id } = req.body;
     
-    res.json({ error: false, data: results, msg: message });
-  });
+    if (!appointment_id) {
+        return res.json({
+            error: true,
+            msg: "Appointment ID is required"
+        });
+    }
+
+    const sql = 'DELETE FROM Appointments WHERE appointment_id = ?';
+    
+    connection.query(sql, [appointment_id], (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.json({
+                error: true,
+                msg: "Database Error",
+                details: err.message
+            });
+        }
+
+        if (results.affectedRows === 0) {
+            return res.json({
+                error: true,
+                msg: "Appointment not found"
+            });
+        }
+
+        res.json({
+            error: false,
+            msg: "Appointment deleted successfully",
+            data: results
+        });
+    });
 });
 
 
