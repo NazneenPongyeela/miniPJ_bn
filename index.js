@@ -88,31 +88,21 @@ app.get('/getdoctor/:id', (req, res) => {
 });
 
 app.get('/getAppointments/', (req, res) => {
-    const sql = 'SELECT * FROM Appointments';
-    connection.query(sql, (err, results) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({
-                error: true,
-                message: 'Error fetching appointments',
-                details: err.message
-            });
+    let sql = 'SELECT * FROM Appointments';
+    connection.query(sql, function(err, results, fields) {
+          res.json(results);
         }
-        res.json(results);
-    });
+      );
 });
 
+
 app.get('/getAppointments/:id', (req, res) => {
-    const id = req.params.id;
-    const sql = 'SELECT * FROM Appointments WHERE appointment_id = ?';
-    
-    connection.query(sql, [id], function(err, results) {
-        if (err) {
-            console.error("Database Error:", err);
-            return res.json({ error: true, msg: "Database Error", details: err.message });
+    let id = req.params.id;
+    let sql = 'SELECT * FROM Appointments WHERE appointment_id = ?';
+    connection.query(sql,[id], function(err, results, fields) {
+          res.json(results);
         }
-        res.json(results);
-    });
+      );
 });
 
 app.get('/getChatHistory/', (req, res) => {
@@ -173,78 +163,30 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 });
 
 
-app.post('/addAppointments', (req, res) => {
-    const { appointment_id, user_id, doctor_id } = req.body;
-
-    if (!appointment_id || !user_id || !doctor_id ) {
-        return res.json({
-            error: true,
-            msg: "All fields are required"
-        });
-    }
-
-    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id) VALUES (?, ?, ?)';
-    const values = [appointment_id, user_id, doctor_id];
-
-    connection.query(sql, values, (err, results) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.json({
-                error: true,
-                msg: "Database Error",
-                details: err.message
-            });
+app.post('/addAppointments',urlencodedParser, (req, res) => {
+  console.log(req.body);
+    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id) VALUES (?,?,?)';
+    let values = [req.body.appointment_id,req.body.doctor_user_id,req.body.doctor_id];
+    let message = "Cannot Insert";
+    connection.query(sql,values, function(err, results, fields) {
+      if(results) { message = "Inserted";}
+          res.json({error:false,data:results,msg:message});
         }
-        res.json({
-            error: false,
-            msg: "Appointment added successfully",
-            data: results
-        });
-    });
+      );
 });
 
-// Edit appointment endpoint
-app.put('/editAppointments', (req, res) => {
-    console.log("Updating appointment:", req.body);
 
-    const { appointment_id, user_id, doctor_id} = req.body;
+app.put('/editAppointments', urlencodedParser, (req, res) => {
+  console.log(req.body);
+  let sql = 'UPDATE doctor SET appointment_id =?, user_id=?, doctor_id=? WHERE doctor_id=? ';
+  let values = [req.body.appointment_id,req.body.doctor_user_id,req.body.doctor_id, req.body.appointment_id];
+  let message = "Cannot Edit";
 
-    // Validate required fields
-    if (!appointment_id || !user_id || !doctor_id) {
-        return res.json({ 
-            error: true, 
-            msg: "All fields are required: appointment_id, user_id, doctor_id" 
-        });
-    }
-
-    const checkDoctorSQL = 'SELECT doctor_id FROM Doctors WHERE doctor_id = ?';
-    connection.query(checkDoctorSQL, [doctor_id], function(err, doctorResults) {
-        if (err) {
-            console.error("Database Error:", err);
-            return res.json({ error: true, msg: "Database Error", details: err.message });
-        }
-
-        if (doctorResults.length === 0) {
-            return res.json({ error: true, msg: "Doctor ID does not exist" });
-        }
-
-        // If doctor exists, proceed with appointment update
-        const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ? WHERE appointment_id = ?';
-        const values = [user_id, doctor_id, appointment_id];
-
-        connection.query(sql, values, function(err, results) {
-            if (err) {
-                console.error("Database Error:", err);
-                return res.json({ error: true, msg: "Database Error", details: err.message });
-            }
-
-            if (results.affectedRows === 0) {
-                return res.json({ error: true, msg: "Appointment not found" });
-            }
-
-            res.json({ error: false, data: results, msg: "Appointment updated successfully" });
-        });
-    });
+  connection.query(sql,values, function(err, results, fields) {
+        if(results) { message = "Updated";}
+        res.json({error:false,data:results,msg:message});
+      }
+    );
 });
 
 app.delete('/deleteAppointments', (req, res) => {
