@@ -167,17 +167,17 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 
 app.post('/addAppointments', (req, res) => {
-    const { appointment_id, user_id, doctor_id, appointment_date } = req.body;
+    const { appointment_id, user_id, doctor_id } = req.body;
 
-    if (!appointment_id || !user_id || !doctor_id || !appointment_date) {
+    if (!appointment_id || !user_id || !doctor_id ) {
         return res.json({
             error: true,
             msg: "All fields are required"
         });
     }
 
-    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
-    const values = [appointment_id, user_id, doctor_id, appointment_date];
+    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id) VALUES (?, ?, ?)';
+    const values = [appointment_id, user_id, doctor_id];
 
     connection.query(sql, values, (err, results) => {
         if (err) {
@@ -200,13 +200,13 @@ app.post('/addAppointments', (req, res) => {
 app.put('/editAppointments', (req, res) => {
     console.log("Updating appointment:", req.body);
 
-    const { appointment_id, user_id, doctor_id, appointment_date } = req.body;
+    const { appointment_id, user_id, doctor_id} = req.body;
 
     // Validate required fields
-    if (!appointment_id || !user_id || !doctor_id || !appointment_date) {
+    if (!appointment_id || !user_id || !doctor_id) {
         return res.json({ 
             error: true, 
-            msg: "All fields are required: appointment_id, user_id, doctor_id, appointment_date" 
+            msg: "All fields are required: appointment_id, user_id, doctor_id" 
         });
     }
 
@@ -222,8 +222,8 @@ app.put('/editAppointments', (req, res) => {
         }
 
         // If doctor exists, proceed with appointment update
-        const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ?, appointment_date = ? WHERE appointment_id = ?';
-        const values = [user_id, doctor_id, appointment_date, appointment_id];
+        const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ? WHERE appointment_id = ?';
+        const values = [user_id, doctor_id, appointment_id];
 
         connection.query(sql, values, function(err, results) {
             if (err) {
