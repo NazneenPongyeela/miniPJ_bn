@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 const mysql = require('mysql2');
 const cors = require('cors')
+app.use(cors());
 const bodyParser = require('body-parser');
 const hostname = '127.0.0.1';
 const fs = require('fs');
@@ -123,12 +124,18 @@ app.get('/getChatHistory/', (req, res) => {
 });
 
 app.get('/getChatHistory/:id', (req, res) => {
-    let sql = 'SELECT * FROM Chat_History';
-    connection.query(sql,[id], function(err, results, fields) {
-          res.json(results);
-        }
-      );
+  let id = req.params.id;
+  let sql = 'SELECT * FROM Chat_History WHERE chat_id = ?';
+
+  connection.query(sql, [id], function(err, results) {
+      if (err) {
+          console.error("Database Error:", err);
+          return res.json({ error: true, msg: "Database Error", details: err.message });
+      }
+      res.json(results);
+  });
 });
+
 
 app.post('/addDoctor', (req, res) => {
   console.log(req.body);
@@ -241,46 +248,40 @@ app.put('/editAppointments', (req, res) => {
 });
 
 app.delete('/deleteAppointments', (req, res) => {
-    const { appointment_id } = req.body;
-    
-    if (!appointment_id) {
-        return res.json({
-            error: true,
-            msg: "Appointment ID is required"
-        });
-    }
+  const { appointment_id } = req.body;
+  
+  if (!appointment_id) {
+      return res.json({ error: true, msg: "Appointment ID is required" });
+  }
 
-    const sql = 'DELETE FROM Appointments WHERE appointment_id = ?';
-    
-    connection.query(sql, [appointment_id], (err, results) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.json({
-                error: true,
-                msg: "Database Error",
-                details: err.message
-            });
-        }
+  const sql = 'DELETE FROM Appointments WHERE appointment_id = ?';
 
-        if (results.affectedRows === 0) {
-            return res.json({
-                error: true,
-                msg: "Appointment not found"
-            });
-        }
+  connection.query(sql, [appointment_id], (err, results) => {
+      if (err) {
+          console.error('Database error:', err);
+          return res.json({ error: true, msg: "Database Error", details: err.message });
+      }
 
-        res.json({
-            error: false,
-            msg: "Appointment deleted successfully",
-            data: results
-        });
-    });
+      if (results.affectedRows === 0) {
+          return res.json({ error: true, msg: "Appointment not found" });
+      }
+
+      res.json({ error: false, msg: "Appointment deleted successfully", data: results });
+  });
 });
+
 
 
 app.post('/addChatHistory', (req, res) => {
   console.log(req.body);
-
+  connection.connect((err) => {
+    if (err) {
+      console.error('Error connecting to MySQL:', err.stack);
+      return;
+    }
+    console.log('Connected to MySQL as ID ' + connection.threadId);
+  });
+  
   if (!req.body.user_id) {
     return res.json({ error: true, msg: "user_id cannot be null" });
   }
