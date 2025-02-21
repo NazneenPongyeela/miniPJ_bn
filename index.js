@@ -195,26 +195,36 @@ app.post('/addAppointments', urlencodedParser, (req, res) => {
 });
 
 
+app.put('/editAppointments', urlencodedParser, (req, res) => {
+    console.log("📥 Editing appointment:", req.body);
 
-app.put('/editAppointments',urlencodedParser, (req, res) => {
-    const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ? WHERE appointment_id = ?';
-    const values = [
+    if (!req.body.appointment_id || !req.body.user_id || !req.body.doctor_id || !req.body.appointment_date) {
+        return res.json({ error: true, msg: "Missing required fields" });
+    }
+
+    let sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ?, appointment_date = ? WHERE appointment_id = ?';
+    let values = [
         req.body.user_id,
         req.body.doctor_id,
+        req.body.appointment_date,
         req.body.appointment_id
     ];
-    
+
     connection.query(sql, values, (err, results) => {
         if (err) {
-            console.error("Database Error:", err);
+            console.error("❌ Database Error:", err);
             return res.json({ error: true, msg: "Database Error", details: err });
         }
+
         if (results.affectedRows === 0) {
             return res.json({ error: true, msg: "Appointment not found" });
         }
+
+        console.log("✅ Appointment updated:", results);
         res.json({ error: false, msg: "Appointment updated successfully" });
     });
 });
+
 
 app.delete('/deleteAppointments', (req, res) => {
   const { appointment_id } = req.body;
