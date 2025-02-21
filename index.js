@@ -171,11 +171,12 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 
 app.post('/addAppointments', urlencodedParser, (req, res) => {
-    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id) VALUES (?,?,?)';
+    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id, appointment_date) VALUES (?,?,?)';
     let values = [
         req.body.appointment_id,
         req.body.user_id, 
         req.body.doctor_id,
+        req.body.appointment_date
     ];
     
     connection.query(sql, values, (err, results) => {
