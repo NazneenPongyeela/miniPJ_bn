@@ -171,6 +171,7 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 
 app.post('/addAppointments', urlencodedParser, (req, res) => {
+    console.log("Received appointment date:", req.body.appointment_date);
     let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id, appointment_date) VALUES (?,?,?)';
     let values = [
         req.body.appointment_id,
