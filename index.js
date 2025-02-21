@@ -97,12 +97,19 @@ app.get('/getAppointments/', (req, res) => {
 
 
 app.get('/getAppointments/:id', (req, res) => {
-    let id = req.params.id;
-    let sql = 'SELECT * FROM Appointments WHERE appointment_id = ?';
-    connection.query(sql,[id], function(err, results, fields) {
-          res.json(results);
+    const appointmentId = req.params.id;
+    
+    const sql = 'SELECT * FROM Appointments WHERE appointment_id = ?';
+    connection.query(sql, [appointmentId], (err, results) => {
+        if (err) {
+            console.error("Database Error:", err);
+            return res.json({ error: true, msg: "Database Error" });
         }
-      );
+        if (results.length === 0) {
+            return res.json({ error: true, msg: "Appointment not found" });
+        }
+        res.json(results[0]);
+    });
 });
 
 app.get('/getChatHistory/', (req, res) => {
@@ -181,16 +188,23 @@ app.post('/addAppointments', urlencodedParser, (req, res) => {
 });
 
 app.put('/editAppointments', urlencodedParser, (req, res) => {
-  console.log(req.body);
-  let sql = 'UPDATE doctor SET user_id=?, doctor_id=? WHERE doctor_id=? ';
-  let values = [req.body.doctor_user_id,req.body.doctor_id, req.body.appointment_id];
-  let message = "Cannot Edit";
-
-  connection.query(sql,values, function(err, results, fields) {
-        if(results) { message = "Updated";}
-        res.json({error:false,data:results,msg:message});
-      }
-    );
+    const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ? WHERE appointment_id = ?';
+    const values = [
+        req.body.user_id,
+        req.body.doctor_id,
+        req.body.appointment_id
+    ];
+    
+    connection.query(sql, values, (err, results) => {
+        if (err) {
+            console.error("Database Error:", err);
+            return res.json({ error: true, msg: "Database Error", details: err });
+        }
+        if (results.affectedRows === 0) {
+            return res.json({ error: true, msg: "Appointment not found" });
+        }
+        res.json({ error: false, msg: "Appointment updated successfully" });
+    });
 });
 
 app.delete('/deleteAppointments', (req, res) => {
