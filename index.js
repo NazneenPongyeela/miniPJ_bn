@@ -182,8 +182,8 @@ app.post('/addAppointments', urlencodedParser, (req, res) => {
 
 app.put('/editAppointments', urlencodedParser, (req, res) => {
   console.log(req.body);
-  let sql = 'UPDATE doctor SET appointment_id =?, user_id=?, doctor_id=? WHERE doctor_id=? ';
-  let values = [req.body.appointment_id,req.body.doctor_user_id,req.body.doctor_id, req.body.appointment_id];
+  let sql = 'UPDATE doctor SET user_id=?, doctor_id=? WHERE doctor_id=? ';
+  let values = [req.body.doctor_user_id,req.body.doctor_id, req.body.appointment_id];
   let message = "Cannot Edit";
 
   connection.query(sql,values, function(err, results, fields) {
