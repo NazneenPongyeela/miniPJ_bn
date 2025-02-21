@@ -164,12 +164,15 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 
 app.post('/addAppointments', urlencodedParser, (req, res) => {
+    // Convert YYYY/MM/DD to YYYY-MM-DD for MySQL
+    const appointmentDate = req.body.appointment_date.replace(/\//g, '-');
+    
     let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id, appointment_date) VALUES (?,?,?,?)';
     let values = [
         req.body.appointment_id,
         req.body.user_id, 
         req.body.doctor_id,
-        req.body.appointment_date
+        appointmentDate
     ];
     
     connection.query(sql, values, (err, results) => {
