@@ -187,7 +187,7 @@ app.post('/addAppointments', urlencodedParser, (req, res) => {
     });
 });
 
-app.put('/editAppointments', urlencodedParser, (req, res) => {
+app.put('/editAppointments',urlencodedParser, (req, res) => {
     const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ? WHERE appointment_id = ?';
     const values = [
         req.body.user_id,
