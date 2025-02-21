@@ -179,15 +179,6 @@ app.post('/addAppointments', urlencodedParser, (req, res) => {
         res.json({ error: false, data: results, msg: "Appointment added successfully" });
     });
 });
-    
-    connection.query(sql, values, (err, results) => {
-        if (err) {
-            console.error("Database Error:", err);
-            return res.json({ error: true, msg: "Database Error", details: err });
-        }
-        res.json({ error: false, data: results, msg: "Appointment added successfully" });
-    });
-});
 
 app.put('/editAppointments', urlencodedParser, (req, res) => {
   console.log(req.body);
