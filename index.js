@@ -164,16 +164,21 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 
 app.post('/addAppointments', urlencodedParser, (req, res) => {
-    // Convert YYYY/MM/DD to YYYY-MM-DD for MySQL
-    const appointmentDate = req.body.appointment_date.replace(/\//g, '-');
-    
-    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id, appointment_date) VALUES (?,?,?,?)';
+    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id) VALUES (?,?,?)';
     let values = [
         req.body.appointment_id,
         req.body.user_id, 
         req.body.doctor_id,
-        appointmentDate
     ];
+    
+    connection.query(sql, values, (err, results) => {
+        if (err) {
+            console.error("Database Error:", err);
+            return res.json({ error: true, msg: "Database Error", details: err });
+        }
+        res.json({ error: false, data: results, msg: "Appointment added successfully" });
+    });
+});
     
     connection.query(sql, values, (err, results) => {
         if (err) {
