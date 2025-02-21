@@ -169,11 +169,9 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
   });
 });
 
-
 app.post('/addAppointments', urlencodedParser, (req, res) => {
-    console.log("Received appointment date:", req.body.appointment_date);
+    console.log("📥 Received appointment data:", req.body); // Debug ตรวจสอบค่าที่ได้รับ
 
-    // ตรวจสอบว่า appointment_date เป็นค่าว่างหรือรูปแบบไม่ถูกต้อง
     if (!req.body.appointment_date || isNaN(Date.parse(req.body.appointment_date))) {
         return res.json({ error: true, msg: "Invalid appointment date format" });
     }
@@ -188,12 +186,14 @@ app.post('/addAppointments', urlencodedParser, (req, res) => {
 
     connection.query(sql, values, (err, results) => {
         if (err) {
-            console.error("Database Error:", err);
+            console.error("❌ Database Error:", err);
             return res.json({ error: true, msg: "Database Error", details: err });
         }
+        console.log("✅ Appointment added:", results);
         res.json({ error: false, data: results, msg: "Appointment added successfully" });
     });
 });
+
 
 
 app.put('/editAppointments',urlencodedParser, (req, res) => {
