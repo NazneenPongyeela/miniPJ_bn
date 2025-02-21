@@ -172,14 +172,20 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 app.post('/addAppointments', urlencodedParser, (req, res) => {
     console.log("Received appointment date:", req.body.appointment_date);
-    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id, appointment_date) VALUES (?,?,?)';
+
+    // ตรวจสอบว่า appointment_date เป็นค่าว่างหรือรูปแบบไม่ถูกต้อง
+    if (!req.body.appointment_date || isNaN(Date.parse(req.body.appointment_date))) {
+        return res.json({ error: true, msg: "Invalid appointment date format" });
+    }
+
+    let sql = 'INSERT INTO Appointments(appointment_id, user_id, doctor_id, appointment_date) VALUES (?,?,?,?)';
     let values = [
         req.body.appointment_id,
         req.body.user_id, 
         req.body.doctor_id,
         req.body.appointment_date
     ];
-    
+
     connection.query(sql, values, (err, results) => {
         if (err) {
             console.error("Database Error:", err);
@@ -188,6 +194,7 @@ app.post('/addAppointments', urlencodedParser, (req, res) => {
         res.json({ error: false, data: results, msg: "Appointment added successfully" });
     });
 });
+
 
 app.put('/editAppointments',urlencodedParser, (req, res) => {
     const sql = 'UPDATE Appointments SET user_id = ?, doctor_id = ? WHERE appointment_id = ?';
