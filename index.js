@@ -3,12 +3,7 @@ const express = require('express');
 const app = express();
 const mysql = require('mysql2');
 const cors = require('cors')
-app.use(cors({
-  origin: 'https://mini-pj-fn.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-app.options('*', cors()); // เพิ่มการรองรับคำขอ preflight สำหรับทุกเส้นทาง
+app.use(cors());
 const bodyParser = require('body-parser');
 const hostname = '127.0.0.1';
 const fs = require('fs');
@@ -179,16 +174,16 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 
 app.post('/addAppointments', (req, res) => {
-    const { user_id, doctor_id,appointment_date } = req.body;
+    const { appointment_id, user_id, doctor_id,appointment_date } = req.body;
 
-    if (!user_id || !doctor_id || !appointment_date ) {
+    if (!appointment_id || !user_id || !doctor_id || !appointment_date ) {
         return res.json({
             error: true,
             msg: "All fields are required"
         });
     }
 
-    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?)';
+    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
     const values = [appointment_id, user_id, doctor_id, appointment_date];
 
     connection.query(sql, values, (err, results) => {
