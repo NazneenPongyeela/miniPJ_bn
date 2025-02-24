@@ -3,7 +3,12 @@ const express = require('express');
 const app = express();
 const mysql = require('mysql2');
 const cors = require('cors')
-app.use(cors());
+app.use(cors({
+  origin: 'https://mini-pj-fn.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.options('*', cors()); // เพิ่มการรองรับคำขอ preflight สำหรับทุกเส้นทาง
 const bodyParser = require('body-parser');
 const hostname = '127.0.0.1';
 const fs = require('fs');
