@@ -172,34 +172,21 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
   });
 });
 
+app.post('/addAppointments', urlencodedParser, (req, res) => {
+    console.log("📥 Received appointment data:", req.body); 
 
-app.post('/addAppointments', (req, res) => {
-    const { appointment_id, user_id, doctor_id,appointment_date } = req.body;
-
-    if (!appointment_id || !user_id || !doctor_id || !appointment_date ) {
-        return res.json({
-            error: true,
-            msg: "All fields are required"
-        });
+    if (!req.body.appointment_date || isNaN(Date.parse(req.body.appointment_date))) {
+        return res.json({ error: true, msg: "Invalid appointment date format" });
     }
-
-    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
-    const values = [appointment_id, user_id, doctor_id, appointment_date];
+@@ -188,14 +186,16 @@ app.post('/addAppointments', urlencodedParser, (req, res) => {
 
     connection.query(sql, values, (err, results) => {
         if (err) {
-            console.error('Database error:', err);
-            return res.json({
-                error: true,
-                msg: "Database Error",
-                details: err.message
-            });
+            console.error("❌ Database Error:", err);
+            return res.json({ error: true, msg: "Database Error", details: err });
         }
-        res.json({
-            error: false,
-            msg: "Appointment added successfully",
-            data: results
-        });
+        console.log("✅ Appointment added:", results);
+        res.json({ error: false, data: results, msg: "Appointment added successfully" });
     });
 });
 
