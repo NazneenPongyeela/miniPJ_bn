@@ -332,5 +332,3 @@ app.delete('/deleteChatHistory', urlencodedParser, (req, res) => {
     res.json({ error: false, data: results, msg: message });
   });
 });
-
-  
