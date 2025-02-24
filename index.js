@@ -174,16 +174,16 @@ app.put('/editDoctors', urlencodedParser, (req, res) => {
 
 
 app.post('/addAppointments', (req, res) => {
-    const { appointment_id, user_id, doctor_id } = req.body;
+    const { appointment_id, user_id, doctor_id,appointment_date } = req.body;
 
-    if (!appointment_id || !user_id || !doctor_id ) {
+    if (!appointment_id || !user_id || !doctor_id || !appointment_date ) {
         return res.json({
             error: true,
             msg: "All fields are required"
         });
     }
 
-    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id,appointment_date) VALUES (?, ?, ?)';
+    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id, appointment_date) VALUES (?, ?, ?, ?)';
     const values = [appointment_id, user_id, doctor_id, appointment_date];
 
     connection.query(sql, values, (err, results) => {
