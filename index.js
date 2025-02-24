@@ -183,8 +183,8 @@ app.post('/addAppointments', (req, res) => {
         });
     }
 
-    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id) VALUES (?, ?, ?)';
-    const values = [appointment_id, user_id, doctor_id];
+    const sql = 'INSERT INTO Appointments (appointment_id, user_id, doctor_id,appointment_date) VALUES (?, ?, ?)';
+    const values = [appointment_id, user_id, doctor_id, appointment_date];
 
     connection.query(sql, values, (err, results) => {
         if (err) {
@@ -332,3 +332,5 @@ app.delete('/deleteChatHistory', urlencodedParser, (req, res) => {
     res.json({ error: false, data: results, msg: message });
   });
 });
+
+  
